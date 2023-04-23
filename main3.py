@@ -36,26 +36,18 @@ nlp = spacy.load("en_core_web_sm")
 entity_registry_names = []
 entity_registry_types = []
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def home():
-    if request.method == 'POST':
-        inputtxt = request.form['inputtxt']
-        prompttxt = request.form['prompttxt']
-        entity_registry_names, entity_registry_types = detect_entities(inputtxt + prompttxt)
-        entity_name_map, entity_type_map, full_uuid_map = mapItems(entity_registry_names, entity_registry_types)
-        txtprocess = inputtxt + prompttxt
-        for entity, uuidstr in full_uuid_map.items():
-            txtprocess = txtprocess.replace(entity, uuidstr)
-
-        outputtxt = request.form['outputtxt']
-        # Replace all the uuids in outputtxt with the right value from entity_name_map
-        for uuidstr, entity in entity_name_map.items():
-            outputtxt = outputtxt.replace(uuidstr, entity)
-
-        return render_template('index.html', output=outputtxt)
-
     return render_template('index.html')
+    for entity, uuidstr in full_uuid_map.items():
+        txtprocess = txtprocess .replace(entity, uuidstr)
 
+    outputtxt = request.form['outputtxt']
+    # Replace all the uuids in outputtxt with the right value from entity_name_map
+    for uuidstr, entity in entity_name_map.items():
+        outputtxt = outputtxt.replace(uuidstr, entity)
+
+    return render_template('index.html', output=outputtxt)
 
 def detect_entities(txt):
     # Perform NER detection on some text

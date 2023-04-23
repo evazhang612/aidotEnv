@@ -1,4 +1,7 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, render_template
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField
+from wtforms.validators import DataRequired
 import os
 import spacy
 import sys
@@ -8,6 +11,7 @@ import colorama
 import datetime
 
 app = Flask(__name__)
+app.secret_key = 'abcde'
 colorama.init(autoreset=True)
 
 class Prompt:
@@ -36,25 +40,41 @@ nlp = spacy.load("en_core_web_sm")
 entity_registry_names = []
 entity_registry_types = []
 
+class InputForm(FlaskForm):
+    inputtxt = StringField('inputtxt', validators=[DataRequired()])
+    prompttxt = StringField('prompttxt', validators=[DataRequired()])
+    submit = SubmitField('Submit')
+
 @app.route('/', methods=['GET', 'POST'])
 def home():
-    if request.method == 'POST':
-        inputtxt = request.form['inputtxt']
-        prompttxt = request.form['prompttxt']
-        entity_registry_names, entity_registry_types = detect_entities(inputtxt + prompttxt)
-        entity_name_map, entity_type_map, full_uuid_map = mapItems(entity_registry_names, entity_registry_types)
-        txtprocess = inputtxt + prompttxt
-        for entity, uuidstr in full_uuid_map.items():
-            txtprocess = txtprocess.replace(entity, uuidstr)
+    form = InputForm()
+    try:
+        if form.is_submitted():
+            inputtxt = str(form.inputtxt.data)
+            prompttxt = str(form.prompttxt.data)
+            print(str(inputtxt))
+            print(str(prompttxt))
+            if inputtxt is None or prompttxt is None:
+                return render_template('index.html', error = '404')
+            entity_registry_names, entity_registry_types = detect_entities(inputtxt + prompttxt)
+            entity_name_map, entity_type_map, full_uuid_map = mapItems(entity_registry_names, entity_registry_types)
+            txtprocess = inputtxt + prompttxt
+            for entity, uuidstr in full_uuid_map.items():
+                txtprocess = txtprocess.replace(entity, uuidstr)
 
-        outputtxt = request.form['outputtxt']
-        # Replace all the uuids in outputtxt with the right value from entity_name_map
-        for uuidstr, entity in entity_name_map.items():
-            outputtxt = outputtxt.replace(uuidstr, entity)
+            # outputtxt = form.outputtxt.data
+            # Replace all the uuids in outputtxt with the right value from entity_name_map
+            # for uuidstr, entity in entity_name_map.items():
+            #     outputtxt = outputtxt.replace(uuidstr, entity)
+            
+            return render_template('index.html', txtprocess=txtprocess, form=form, entity_name_map = entity_name_map)
+    except:
+        print(form.inputtxt.data)
+        print(form.prompttxt.data)
+        print("error")
+        return render_template('index.html')
 
-        return render_template('index.html', output=outputtxt)
-
-    return render_template('index.html')
+    return render_template('index.html', form=form)
 
 
 def detect_entities(txt):
@@ -69,7 +89,7 @@ def detect_entities(txt):
         entity_registry_types.append(ent.label_)
 
     for token in doc:
-        if token.like_email and token not in entity_registry_names:
+        if token.like_email and token.text not in entity_registry_names:
             entity_registry_names.append(token.text)
             entity_registry_types.append("EMAIL")
          

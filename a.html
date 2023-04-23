@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Text Encoder</title>
+    <style>
+        /* Add your CSS styles here */
+    </style>
+</head>
+
+<body>
+    <h1>Text Encoder</h1>
+    <label for="text-prompt">Text Prompt:</label>
+    <input type="text" id="text-prompt" name="inputtxt" />
+    <br />
+    <label for="question">Question:</label>
+    <input type="text" id="question" name="prompttxt" />
+    <br />
+    <button id="save">Save Encoded Table</button>
+    <button id="revert">Revert Output</button>
+    <br />
+    <div id="output"></div>
+
+    <script>
+        const textPromptInput = document.getElementById("text-prompt");
+        const questionInput = document.getElementById("question");
+        const saveButton = document.getElementById("save");
+        const revertButton = document.getElementById("revert");
+        const outputDiv = document.getElementById("output");
+
+        let previousOutput = "";
+
+        textPromptInput.addEventListener("input", updateOutput);
+        questionInput.addEventListener("input", updateOutput);
+
+        function updateOutput() {
+            previousOutput = outputDiv.textContent;
+            fetch("/", {
+                method: "POST",
+                body: JSON.stringify({
+                    inputtxt: textPromptInput.value,
+                    prompttxt: questionInput.value,
+                }),
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    outputDiv.textContent = JSON.stringify(data);
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                });
+        }
+
+        saveButton.addEventListener("click", () => {
+            const encodedTable = {
+                textPrompt: textPromptInput.value,
+                question: questionInput.value,
+            };
+            // Save the encodedTable to local storage, or send it to a back-end server
+            console.log(encodedTable);
+        });
+
+        revertButton.addEventListener("click", () => {
+            outputDiv.textContent = previousOutput;
+        });
+    </script>
+</body>
+
+</html>
